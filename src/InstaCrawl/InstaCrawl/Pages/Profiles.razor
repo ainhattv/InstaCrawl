@@ -1,0 +1,38 @@
+﻿@page "/profiles"
+
+@inject ProfileService ProfileService
+@using Models
+
+<h1>Profiles</h1>
+
+@if (_profiles == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var profile in _profiles)
+            {
+                <tr>
+                    <td>@profile.Id</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<Profile> _profiles;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _profiles = await ProfileService.GetAsync();
+    }
+}
