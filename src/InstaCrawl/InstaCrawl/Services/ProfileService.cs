@@ -28,14 +28,35 @@ namespace InstaCrawl.Services
         public async Task<Profile> GetAsync(string id) =>
            await _profiles.Find<Profile>(p => p.Id == id).FirstOrDefaultAsync();
 
+        public async Task<bool> IsExistProfile(string userName)
+        {
+            var total = await _profiles.CountDocumentsAsync<Profile>(p => p.UserName.ToUpper() == userName.ToUpper());
+
+            if (total == 0)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
         public async Task<Profile> CreateAsync(Profile profile)
         {
+            profile.ProfileStatus = ProfileStatus.NEW;
+            profile.CreatedDay = DateTime.UtcNow;
+            profile.UpdatedDay = DateTime.UtcNow;
+
             await _profiles.InsertOneAsync(profile);
             return profile;
         }
 
-        public async Task UpdateAsync(string id, Profile profileIn) =>
+        public async Task UpdateAsync(string id, Profile profileIn)
+        {
+            profileIn.UpdatedDay = DateTime.UtcNow;
             await _profiles.ReplaceOneAsync(p => p.Id == id, profileIn);
+        }
 
         public async Task CrawlAllProfilesAsync()
         {
@@ -52,7 +73,7 @@ namespace InstaCrawl.Services
             if (profile == null)
                 throw new ArgumentNullException(nameof(profile));
 
-            CrawlHelper.CrawlProfile("chancha_n69");
+            CrawlHelper.CrawlProfile(profile.UserName);
 
             profile.ProfileStatus = ProfileStatus.CRAWLED;
 

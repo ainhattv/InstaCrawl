@@ -1,0 +1,71 @@
+﻿@page "/profiles/create"
+
+@inject ProfileService ProfileService
+@using Models
+
+<h1>Create Profile</h1>
+
+@if (_alertMessage != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @_alertMessage
+    </div>
+}
+
+
+<form>
+    <EditForm Model="@_profile" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <InputText id="name" class="form-control" placeholder="UserName" @bind-Value="_profile.UserName" />
+        </div>
+
+        <div class="form-group">
+            <InputTextArea id="discription" class="form-control" placeholder="Discription" @bind-Value="_profile.Discription" />
+        </div>
+
+        <button class="btn btn-primary" type="submit">Submit</button>
+    </EditForm>
+</form>
+
+@code {
+    private Profile _profile;
+    private string _alertMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _profile = new Profile();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        // validation
+        if (!await ValidateUniqeProfile(_profile.UserName))
+        {
+            return;
+        }
+
+
+        await ProfileService.CreateAsync(_profile);
+
+        NavigationManager.NavigateTo("/");
+    }
+
+    private async Task<bool> ValidateUniqeProfile(string userName)
+    {
+        var isExist = await ProfileService.IsExistProfile(userName);
+
+        if (isExist)
+        {
+            _alertMessage = "UserName is dupplicaated";
+            return false;
+        }
+        else
+        {
+            _alertMessage = null;
+            return true;
+        }
+    }
+}

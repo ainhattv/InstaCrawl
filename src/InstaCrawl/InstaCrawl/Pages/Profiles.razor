@@ -1,27 +1,54 @@
-﻿@page "/profiles"
+﻿@page "/"
 
 @inject ProfileService ProfileService
 @using Models
 
 <h1>Profiles</h1>
 
+<div>
+    <p>
+        <button type="button" class="btn btn-primary" @onclick="CreateProfile">Create Profile</button>
+        <button type="button" class="btn btn-primary" @onclick="CrawlAllAsync">Crawl Profiles</button>
+    </p>
+</div>
+
+@if (_isLoading)
+{
+    <div class="spinner-grow" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+}
+
 @if (_profiles == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="spinner-grow" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
 }
 else
 {
     <table class="table">
         <thead>
             <tr>
-                <th>Id</th>
+                <th>UserName</th>
+                <th>Status</th>
+                <th>CreatedDay</th>
+                <th>UpdatedDay</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var profile in _profiles)
             {
                 <tr>
-                    <td>@profile.Id</td>
+                    <td>@profile.UserName</td>
+                    <td>@Enum.GetName(typeof(ProfileStatus), profile.ProfileStatus)</td>
+                    <td>@profile.CreatedDay</td>
+                    <td>@profile.UpdatedDay</td>
+                    <td>
+                        <button type="button" class="btn btn-primary" @onclick="() => CrawlAsync(profile.Id)">Crawl</button>
+                        <button type="button" class="btn btn-secondary">Edit</button>
+                        <button type="button" class="btn btn-warning" @onclick="() => RemoveAsync(profile.Id)">Remove</button>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -30,9 +57,44 @@ else
 
 @code {
     private IEnumerable<Profile> _profiles;
+    private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        Loading(true);
         _profiles = await ProfileService.GetAsync();
+        Loading(false);
+    }
+
+    private void Loading(bool status)
+    {
+        _isLoading = status;
+        StateHasChanged();
+    }
+
+    private void CreateProfile()
+    {
+        NavigationManager.NavigateTo("profiles/create");
+    }
+
+    private async Task CrawlAsync(string id)
+    {
+        Loading(true);
+        await ProfileService.CrawlProfileImagesAsync(id);
+        Loading(false);
+    }
+
+    private async Task CrawlAllAsync()
+    {
+        Loading(true);
+        await ProfileService.CrawlAllProfilesAsync();
+        Loading(false);
+    }
+
+    private async Task RemoveAsync(string id)
+    {
+        await ProfileService.RemoveAsync(id);
+
+        await OnInitializedAsync();
     }
 }
